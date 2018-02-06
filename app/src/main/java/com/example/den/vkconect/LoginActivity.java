@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
@@ -59,13 +60,11 @@ public class LoginActivity extends AppCompatActivity {
     private static final String[] DUMMY_CREDENTIALS = new String[]{
             "foo@example.com:hello", "bar@example.com:world"
     };
-
+    private ProgressDialog progressDialog = null;
     private UserLoginTask mAuthTask = null;
     private TextView link;
     private CheckBox checkBox;
     private String scope[] = new String[]{VKScope.MESSAGES, VKScope.FRIENDS, VKScope.WALL};
-    private ProgressBar mProgressView;
-
 
     private TextInputLayout mEmailLayout;
     private TextInputLayout mPasswordLayout;
@@ -77,7 +76,6 @@ public class LoginActivity extends AppCompatActivity {
 
         mEmailLayout = findViewById(R.id.email_layout);
         mPasswordLayout = findViewById(R.id.password_layout);
-        mProgressView = findViewById(R.id.login_progress);
         checkBox = findViewById(R.id.idChekBox);
         link = findViewById(R.id.infoTxtCredits);
         final Button autorizetFromVK = findViewById(R.id.idVKbutton);
@@ -104,7 +102,8 @@ public class LoginActivity extends AppCompatActivity {
                     if (mAuthTask != null) {//проверяем запускался ли AsyncTask
                         return;
                     }
-                    mProgressView.setVisibility(View.VISIBLE);//показываем прогресс
+//                    mProgressView.setVisibility(View.VISIBLE);//показываем прогресс
+                    showProgress("Ожидайте, подключаемся...");
                     mAuthTask = new UserLoginTask(mEmailLayout.getEditText().getText().toString(), mPasswordLayout.getEditText().getText().toString());
                     mAuthTask.execute((Void) null);//запускаем поток
                 } else {
@@ -192,17 +191,21 @@ public class LoginActivity extends AppCompatActivity {
         boolean pass = mPasswordLayout != null && mPasswordLayout.getEditText() != null //проверяем поле пароль на нул
                 && !TextUtils.isEmpty(mPasswordLayout.getEditText().getText()) //проверяем поле имейл на пустоту
                 && mPasswordLayout.getEditText().getText().length() > 4;//проверяем длину пароля;
-        return mail && pass;
+        if (!mail) {
+            mEmailLayout.setError(getString(R.string.error_invalid_email));
+            return mail;
+        } else {
+            mPasswordLayout.setError(getString(R.string.error_invalid_password));
+            return pass;
+        }
     }
 
     private void setError() {
-
         if (mEmailLayout != null) {
-            mEmailLayout.setError(getString(R.string.error_invalid_email));
-        } else if (mPasswordLayout != null) {
-            mPasswordLayout.setError(getString(R.string.error_invalid_password));
-        }
 
+        } else if (mPasswordLayout != null) {
+
+        }
     }
 //===============================================
 //    private void populateAutoComplete() {
@@ -402,7 +405,8 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
-            mProgressView.setVisibility(View.GONE);//скрываем прогресс
+//            mProgressView.setVisibility(View.GONE);//скрываем прогресс
+            hideProgress();
 
             if (success) {
                 AuthorizationUtils.setAuthorized(LoginActivity.this);//ставим метку что авторизировались
@@ -416,8 +420,28 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onCancelled() {
             mAuthTask = null;
-            mProgressView.setVisibility(View.GONE);//скрываем прогресс
+//            mProgressView.setVisibility(View.GONE);//скрываем прогресс
+            hideProgress();
         }
     }//UserLoginTask
+
+    public void hideProgress() {
+
+        if (progressDialog != null) {
+            progressDialog.dismiss();
+            progressDialog = null;
+        }
+    }
+
+    private void showProgress(String text) {
+        if (progressDialog == null) {
+            try {
+                progressDialog = ProgressDialog.show(this, "", text);
+                progressDialog.setCancelable(false);
+            } catch (Exception e) {
+
+            }
+        }
+    }
 }
 
