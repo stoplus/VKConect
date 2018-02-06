@@ -81,6 +81,13 @@ public class LoginActivity extends AppCompatActivity {
         final Button autorizetFromVK = findViewById(R.id.idVKbutton);
         final Button signInButton = findViewById(R.id.email_sign_in_button);
 
+        mEmailLayout.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean b) {
+                mEmailLayout.setError("");
+            }
+        });
+
         link.setMovementMethod(LinkMovementMethod.getInstance());//делаем ссылку кликабельной
         checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -106,8 +113,6 @@ public class LoginActivity extends AppCompatActivity {
                     showProgress("Ожидайте, подключаемся...");
                     mAuthTask = new UserLoginTask(mEmailLayout.getEditText().getText().toString(), mPasswordLayout.getEditText().getText().toString());
                     mAuthTask.execute((Void) null);//запускаем поток
-                } else {
-                    setError();//показываем ошибку
                 }
             }
         });
@@ -193,18 +198,16 @@ public class LoginActivity extends AppCompatActivity {
                 && mPasswordLayout.getEditText().getText().length() > 4;//проверяем длину пароля;
         if (!mail) {
             mEmailLayout.setError(getString(R.string.error_invalid_email));
-            return mail;
-        } else {
+            mPasswordLayout.setErrorEnabled(false);
+            return false;
+        } else if (!pass){
             mPasswordLayout.setError(getString(R.string.error_invalid_password));
-            return pass;
-        }
-    }
-
-    private void setError() {
-        if (mEmailLayout != null) {
-
-        } else if (mPasswordLayout != null) {
-
+            mEmailLayout.setErrorEnabled(false);
+            return false;
+        }else{
+            mEmailLayout.setErrorEnabled(false);
+            mPasswordLayout.setErrorEnabled(false);
+            return true;
         }
     }
 //===============================================
