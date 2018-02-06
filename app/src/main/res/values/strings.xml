@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">VKConect</string>
+    <string name="login">Login</string>
+    <string name="main">Main</string>
+    <string name="status">Status</string>
+    <string name="history">History</string>
+    <string name="logout">Logout</string>
+    <string name="contacts">Contacts</string>
+    <string name="title_activity_login">Sign in</string>
+    <integer name="com_vk_sdk_AppId">6360866</integer>
+
+    <!-- Strings related to login -->
+    <string name="prompt_email">Name</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_email">This name is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email completions."</string>
+    <string name="link">"<a href="https://www.google.com.ua">License</a>"</string>
+
+
+</resources>
+
