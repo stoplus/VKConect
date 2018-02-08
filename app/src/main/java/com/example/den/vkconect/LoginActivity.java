@@ -1,56 +1,30 @@
 package com.example.den.vkconect;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
+import android.provider.SyncStateContract;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.app.LoaderManager.LoaderCallbacks;
 
-import android.content.CursorLoader;
-import android.content.Loader;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
-import android.text.util.Linkify;
-import android.util.Patterns;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKCallback;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKError;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static android.Manifest.permission.READ_CONTACTS;
-
 /**
  * A login screen that offers login via email/password.
  */
@@ -64,15 +38,19 @@ public class LoginActivity extends AppCompatActivity {
     private UserLoginTask mAuthTask = null;
     private TextView link;
     private CheckBox checkBox;
-    private String scope[] = new String[]{VKScope.MESSAGES, VKScope.FRIENDS, VKScope.WALL};
-
+    private String scope[] = new String[]{VKScope.WALL, VKScope.PHOTOS, VKScope.STATUS, VKScope.STATS};
     private TextInputLayout mEmailLayout;
     private TextInputLayout mPasswordLayout;
+    private Intent main;
+    private Account account = new Account();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        //Восстановление сохранённой сессии
+        account.restore(this);
 
         mEmailLayout = findViewById(R.id.email_layout);
         mPasswordLayout = findViewById(R.id.password_layout);
@@ -109,7 +87,6 @@ public class LoginActivity extends AppCompatActivity {
                     if (mAuthTask != null) {//проверяем запускался ли AsyncTask
                         return;
                     }
-//                    mProgressView.setVisibility(View.VISIBLE);//показываем прогресс
                     showProgress("Ожидайте, подключаемся...");
                     mAuthTask = new UserLoginTask(mEmailLayout.getEditText().getText().toString(), mPasswordLayout.getEditText().getText().toString());
                     mAuthTask.execute((Void) null);//запускаем поток
@@ -160,10 +137,14 @@ public class LoginActivity extends AppCompatActivity {
     }//onCreate
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
         if (!VKSdk.onActivityResult(requestCode, resultCode, data, new VKCallback<VKAccessToken>() {
             @Override
             public void onResult(VKAccessToken res) {
+                account.access_token = res.accessToken;
+                account.user_id = Long.parseLong(res.userId);
+                account.save(LoginActivity.this);
+
                 // Пользователь успешно авторизовался
                 AuthorizationUtils.setAuthorized(LoginActivity.this);
                 onLoginCompleted();
@@ -182,10 +163,9 @@ public class LoginActivity extends AppCompatActivity {
 
     //	запуск маинАктивити
     private void onLoginCompleted() {
-        finish();
         Intent main = new Intent(this, MainActivity.class);
         startActivity(main);
-
+        finish();
     }//onLoginCompleted
 
     //	It checks the email field
@@ -408,9 +388,7 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
-//            mProgressView.setVisibility(View.GONE);//скрываем прогресс
             hideProgress();
-
             if (success) {
                 AuthorizationUtils.setAuthorized(LoginActivity.this);//ставим метку что авторизировались
                 onLoginCompleted();//запуск маинАктивити
@@ -423,13 +401,11 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onCancelled() {
             mAuthTask = null;
-//            mProgressView.setVisibility(View.GONE);//скрываем прогресс
             hideProgress();
         }
     }//UserLoginTask
 
     public void hideProgress() {
-
         if (progressDialog != null) {
             progressDialog.dismiss();
             progressDialog = null;

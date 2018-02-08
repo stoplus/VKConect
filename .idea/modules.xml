@@ -3,10 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/VKConect.iml" filepath="$PROJECT_DIR$/VKConect.iml" />
-      <module fileurl="file://E:\Progmamming\VKConect\app\VKConect-app.iml" filepath="E:\Progmamming\VKConect\app\VKConect-app.iml" />
-      <module fileurl="file://E:\Progmamming\VKConect\vksdk_library\VKConect-vksdk_library.iml" filepath="E:\Progmamming\VKConect\vksdk_library\VKConect-vksdk_library.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://E:\Progmamming\VKConect\vksdk_library\vksdk_library.iml" filepath="E:\Progmamming\VKConect\vksdk_library\vksdk_library.iml" />
     </modules>
   </component>
 </project>
