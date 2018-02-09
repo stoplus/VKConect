@@ -1,4 +1,4 @@
-package com.example.den.vkconect;
+package com.example.den.vkconect.retrifit;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;

@@ -1,4 +1,4 @@
-package com.example.den.vkconect;
+package com.example.den.vkconect.retrifit;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;

@@ -1,38 +1,35 @@
 package com.example.den.vkconect;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
-import android.os.Environment;
+import android.net.wifi.WifiManager;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
+import android.text.format.Formatter;
+import android.util.ArrayMap;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.vk.sdk.VKAccessToken;
-import com.vk.sdk.VKScope;
-import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKApi;
 import com.vk.sdk.api.VKApiConst;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
-import com.vk.sdk.api.model.VKApiCommunity;
-import com.vk.sdk.api.model.VKApiCommunityFull;
-import com.vk.sdk.api.model.VKApiModel;
 import com.vk.sdk.api.model.VKApiPhoto;
 import com.vk.sdk.api.model.VKAttachments;
 import com.vk.sdk.api.model.VKPhotoArray;
@@ -40,25 +37,30 @@ import com.vk.sdk.api.model.VKWallPostResult;
 import com.vk.sdk.api.photo.VKImageParameters;
 import com.vk.sdk.api.photo.VKUploadImage;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    private LinearLayout layoutName;
-    private TextView nameFile;
     private ImageView imageForSend;
-    private List<String> listImage;
-    private String img = "";
     private Account account = new Account();
     private Bitmap selectedImage;
     private EditText textMassege;
+
+    public static String STATUS_KEY = "status";
+    public static String STATUS_AND_PHOTO_KEY = "statusAndPhoto";
+    public static String PHOTO_KEY = "photo";
+    private boolean foto = false;
+    private boolean status = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,33 +78,9 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         textMassege = findViewById(R.id.editText);
-//        RecyclerView recyclerView = findViewById(R.id.idListView_Image);
         StaggeredGridLayoutManager mStaggeredGridLayoutManager = new StaggeredGridLayoutManager(
                 2, //number of grid columns
                 GridLayoutManager.VERTICAL);
-
-//        recyclerView.setLayoutManager(mStaggeredGridLayoutManager);
-
-//        AdapterSelectImage adapter = new AdapterSelectImage(this, getFotoFromSD());
-//        recyclerView.setAdapter(adapter);
-//        recyclerView.addOnItemTouchListener(
-//                new RecyclerItemClickListener(this, recyclerView, new RecyclerItemClickListener.OnItemClickListener() {
-//                    // код для клика по элементу
-//                    @Override
-//                    public void onItemClick(View view, int position) {
-//                        String img = listImage.get(position);
-//                        int r = img.lastIndexOf('/');
-//                        img = img.substring(r + 1);
-//                        layoutName.setVisibility(View.VISIBLE);
-//                        nameFile.setText(img);
-//                    }//onItemClick
-//
-//                    //длинное нажатие по элементу
-//                    @Override
-//                    public void onLongItemClick(View view, final int position) {
-//                    }//onLongItemClick
-//                })//RecyclerItemClickListener
-//        );
     }//onCreate
 
 
@@ -121,11 +99,11 @@ public class MainActivity extends AppCompatActivity {
             try {
                 final Uri imageUri = data.getData();
                 final InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                Bitmap bitmap  = BitmapFactory.decodeStream(imageStream );
+                Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
                 //масштабируем под необходимый размер
                 int maxHeight = 400;
                 int maxWidth = 400;
-                float scale = Math.min(((float)maxHeight / bitmap.getWidth()), ((float)maxWidth / bitmap.getHeight()));
+                float scale = Math.min(((float) maxHeight / bitmap.getWidth()), ((float) maxWidth / bitmap.getHeight()));
                 Matrix matrix = new Matrix();
                 matrix.postScale(scale, scale);
                 selectedImage = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
@@ -141,25 +119,37 @@ public class MainActivity extends AppCompatActivity {
     }//onActivityResult
 
     //======================================================================================
+    @SuppressLint("ShowToast")
     public void send(View view) {
+        String ip = "";
         String text = textMassege.getText().toString();
         if (text.equals("") && selectedImage == null) {
-            int f = 9;
+            Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Выберите фото и заполните статус", Snackbar.LENGTH_LONG).show();
             return;
         } else if (text.equals("") && selectedImage != null) {
             //oтправляем только картинку
             loadPhotoToMyWall(selectedImage, "");
-
+            ip = getLocalIpAddress();
+            account.savePhoto(this, ip);
         } else if (!text.equals("") && selectedImage == null) {
             //oтправляем только статус
             sendStatus(text);
+            ip = getLocalIpAddress();
+            account.saveStatus(this, ip);
         } else {
             //отправляем и статус и картинку
             sendStatus(text);
             loadPhotoToMyWall(selectedImage, "");
-//            imageForSend.setImageBitmap(selectedImage);
+            ip = getLocalIpAddress();
+            account.saveStatusAndPhoto(this, ip);
+            if (status && foto){
+                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Статус и фото опубликованы!", Snackbar.LENGTH_LONG).show();
+            }else if (!status && foto){
+                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Только фото опубликовано!", Snackbar.LENGTH_LONG).show();
+            }else if (status && !foto){
+                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Только статус опубликован!", Snackbar.LENGTH_LONG).show();
+            }else Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Не опубликовано!", Snackbar.LENGTH_LONG).show();
         }
-
     }
 
     private void sendStatus(String newStatus) {
@@ -168,15 +158,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onComplete(VKResponse response) {
                 super.onComplete(response);
+                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Новый статус опубликован", Snackbar.LENGTH_LONG).show();
+            }
 
-                String status = "";
-                try {
-                    JSONObject jsonObject = response.json.getJSONObject("response");
-                    status = jsonObject.getString("status");
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
+            @Override
+            public void onError(VKError error) {
+                super.onError(error);
+                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Статус не опубликован!", Snackbar.LENGTH_LONG).show();
             }
         });
     }//sendStatus
@@ -189,11 +177,12 @@ public class MainActivity extends AppCompatActivity {
             public void onComplete(VKResponse response) {
                 VKApiPhoto photoModel = ((VKPhotoArray) response.parsedModel).get(0);
                 makePost(new VKAttachments(photoModel), message, getMyId());
+                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Фото опубликовано", Snackbar.LENGTH_LONG).show();
             }
 
             @Override
             public void onError(VKError error) {
-                // error
+                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Фото не опубликовано!", Snackbar.LENGTH_LONG).show();
             }
         });
     }
@@ -213,12 +202,12 @@ public class MainActivity extends AppCompatActivity {
         post.executeWithListener(new VKRequest.VKRequestListener() {
             @Override
             public void onComplete(VKResponse response) {
-                // post was added
+                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Фото опубликовано", Snackbar.LENGTH_LONG).show();
             }
 
             @Override
             public void onError(VKError error) {
-                // error
+                foto = false;
             }
         });
     }//makePost
@@ -227,24 +216,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         imageForSend = findViewById(R.id.imageForSend);
-//        layoutName = findViewById(R.id.idLinerNameImage);
-//        nameFile = findViewById(R.id.idNameImage);
-        listImage = getFotoFromSD();
     }
-
-    public List<String> getFotoFromSD() {
-        File[] arrFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).listFiles();
-        List<String> images = new ArrayList<>(); // массив имен файлов
-        if (arrFile != null) {
-            for (File lile : arrFile) {
-                int r = lile.toString().lastIndexOf(".jpg");
-                int e = lile.toString().lastIndexOf(".png");
-                if (r != -1 || e != -1) images.add(lile.toString());
-            }
-        } else
-            images.add("drawable://" + R.drawable.no_foto);
-        return images;
-    }//getFotoFromSD
 
     //	If user is not authorized we finish the main activity
     private void onLogout() {
@@ -267,15 +239,38 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.mLogout: {
-                AuthorizationUtils.logout(this);
+            case R.id.mLogout:
+                AuthorizationUtils.logoutPref(this);
                 onLogout();
                 return true;
-            }
-            default: {
-                return super.onOptionsItemSelected(item);
-            }
+            case R.id.mStatus:
+                finish();
+                Intent intent = new Intent(this, Status.class);
+                startActivity(intent);
+                return true;
+
         }
+        return super.onOptionsItemSelected(item);
     }
+
     //+======================================================================
+    public String getLocalIpAddress() {
+
+        try {
+            for (Enumeration en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+                NetworkInterface intf = (NetworkInterface) en.nextElement();
+                for (Enumeration enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                    InetAddress inetAddress = (InetAddress) enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+                        String ipAddress = inetAddress.getHostAddress().toString();
+                        Log.e("IP address", "" + ipAddress);
+                        return ipAddress;
+                    }
+                }
+            }
+        } catch (SocketException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }//getLocalIpAddress
 }//class MainActivity

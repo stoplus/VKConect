@@ -1,4 +1,6 @@
-package com.example.den.vkconect;
+package com.example.den.vkconect.retrifit;
+
+import com.example.den.vkconect.retrifit.ApiVKRequest;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;

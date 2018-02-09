@@ -9,6 +9,14 @@
     <string name="title_activity_login">Sign in</string>
     <integer name="com_vk_sdk_AppId">6360866</integer>
 
+    <!--status-->
+    <string name="upload_picture">Upload picture</string>
+    <string name="upload_status">Upload status</string>
+    <string name="upload_picture_and_status">Upload picture and status</string>
+    <string name="activity">Activity</string>
+    <string name="time">Time</string>
+    <string name="IP">IP</string>
+
     <!-- Strings related to login -->
     <string name="prompt_email">Name</string>
     <string name="prompt_password">Password</string>
