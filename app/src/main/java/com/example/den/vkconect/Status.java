@@ -72,6 +72,11 @@ public class Status extends AppCompatActivity {
                 Intent intent = new Intent(this, MainActivity.class);
                 startActivity(intent);
                 return true;
+            case R.id.mContacts:
+                finish();
+                intent = new Intent(this, SImContacts.class);
+                startActivity(intent);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }

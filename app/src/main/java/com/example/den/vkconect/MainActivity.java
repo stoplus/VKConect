@@ -121,11 +121,10 @@ public class MainActivity extends AppCompatActivity {
     //======================================================================================
     @SuppressLint("ShowToast")
     public void send(View view) {
-        String ip = "";
+        String ip;
         String text = textMassege.getText().toString();
         if (text.equals("") && selectedImage == null) {
             Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Выберите фото и заполните статус", Snackbar.LENGTH_LONG).show();
-            return;
         } else if (text.equals("") && selectedImage != null) {
             //oтправляем только картинку
             loadPhotoToMyWall(selectedImage, "");
@@ -142,13 +141,6 @@ public class MainActivity extends AppCompatActivity {
             loadPhotoToMyWall(selectedImage, "");
             ip = getLocalIpAddress();
             account.saveStatusAndPhoto(this, ip);
-            if (status && foto){
-                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Статус и фото опубликованы!", Snackbar.LENGTH_LONG).show();
-            }else if (!status && foto){
-                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Только фото опубликовано!", Snackbar.LENGTH_LONG).show();
-            }else if (status && !foto){
-                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Только статус опубликован!", Snackbar.LENGTH_LONG).show();
-            }else Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Не опубликовано!", Snackbar.LENGTH_LONG).show();
         }
     }
 
@@ -238,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Intent intent;
         switch (item.getItemId()) {
             case R.id.mLogout:
                 AuthorizationUtils.logoutPref(this);
@@ -245,10 +238,14 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             case R.id.mStatus:
                 finish();
-                Intent intent = new Intent(this, Status.class);
+                intent = new Intent(this, Status.class);
                 startActivity(intent);
                 return true;
-
+            case R.id.mContacts:
+                finish();
+                intent = new Intent(this, SImContacts.class);
+                startActivity(intent);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -262,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
                 for (Enumeration enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
                     InetAddress inetAddress = (InetAddress) enumIpAddr.nextElement();
                     if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
-                        String ipAddress = inetAddress.getHostAddress().toString();
+                        String ipAddress = inetAddress.getHostAddress();
                         Log.e("IP address", "" + ipAddress);
                         return ipAddress;
                     }
