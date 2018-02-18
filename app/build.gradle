@@ -16,6 +16,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
 }
 
 dependencies {
@@ -35,4 +39,7 @@ dependencies {
     compile 'com.squareup.retrofit2:converter-gson:2.3.0'
 
     compile 'com.vk:androidsdk:1.6.9'
+
+    compile 'com.github.hotchemi:permissionsdispatcher:3.1.0'
+    annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:3.0.1'
 }

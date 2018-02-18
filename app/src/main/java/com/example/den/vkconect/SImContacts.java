@@ -1,39 +1,56 @@
 package com.example.den.vkconect;
 
-import android.content.ContentUris;
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.ArrayMap;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnNeverAskAgain;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.OnShowRationale;
+import permissions.dispatcher.PermissionRequest;
+import permissions.dispatcher.RuntimePermissions;
+
+@RuntimePermissions
 public class SImContacts extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
     private SwipeRefreshLayout refreshLayout;
     private List<Contact> contactList;
     private AdapterContacts adapter;
     private RecyclerView recyclerView;
+    private static final int REQUEST_PERMITIONS = 1100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sim_contacts);
 
+        //Инициализация класса !!!-произойдет после компиляции-!!!
+        SImContactsPermissionsDispatcher.requestPermissionsWithPermissionCheck(this);
+    }//onCreate
+
+    @NeedsPermission({Manifest.permission.READ_CONTACTS})
+    void requestPermissions() {
         refreshLayout = findViewById(R.id.RefreshContacts);//получаем refreshLayout
         refreshLayout.setOnRefreshListener(this);//слушатель для обновления
 
@@ -60,10 +77,57 @@ public class SImContacts extends AppCompatActivity implements SwipeRefreshLayout
                     //длинное нажатие по элементу
                     @Override
                     public void onLongItemClick(View view, final int position) {
-
                     }//onLongItemClick
                 })//RecyclerItemClickListener
         );
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        SImContactsPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
+    }//onRequestPermissionsResult
+
+    @OnPermissionDenied({Manifest.permission.READ_CONTACTS})
+    void permissionsDenied() {
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", getPackageName(), null);
+        intent.setData(uri);
+        startActivityForResult(intent, REQUEST_PERMITIONS);
+    }//permissionsDenied
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_PERMITIONS) {
+            SImContactsPermissionsDispatcher.requestPermissionsWithPermissionCheck(this);
+        }
+    }//onActivityResult
+
+    @OnNeverAskAgain({Manifest.permission.READ_CONTACTS})
+    void onNeverAskAgain() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Title")
+                .setMessage("Message")
+                .setPositiveButton("Ok", (dialog, which) -> {
+                    Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    Uri uri = Uri.fromParts("package", getPackageName(), null);
+                    intent.setData(uri);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss()).create()
+                .show();
+    }
+
+    @OnShowRationale({Manifest.permission.READ_CONTACTS})
+    void showRationaleForCamera(final PermissionRequest request) {
+        new AlertDialog.Builder(this)
+                .setMessage("Это надо вам!!!")
+                .setPositiveButton("хорошо", (dialog, button) -> request.proceed())
+                .setNegativeButton("низачто", (dialog, button) -> request.cancel())
+                .show();
     }
 
     //========================================================================================================
@@ -72,8 +136,8 @@ public class SImContacts extends AppCompatActivity implements SwipeRefreshLayout
         String selection1 = ContactsContract.RawContacts.ACCOUNT_NAME + "='SIM'";
         String selection = ContactsContract.RawContacts.ACCOUNT_NAME + "='SIM1'";
 
-        Cursor cursorSim = this.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,null, selection, null, null);
-        Cursor cursorSim1 = this.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,null, selection1, null, null);
+        Cursor cursorSim = this.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, selection, null, null);
+        Cursor cursorSim1 = this.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, selection1, null, null);
 
         if (cursorSim != null && !cursorSim.moveToFirst()) {
             if (cursorSim1 != null && cursorSim1.moveToFirst()) {
@@ -99,7 +163,7 @@ public class SImContacts extends AppCompatActivity implements SwipeRefreshLayout
 
     //========================================================================================================
     //получаем список типов аккаунтов
-    private void allSIMContact() {
+    public void allSIMContact() {
         HashSet<String> accountTypes = new HashSet<>();
         String[] projection = new String[]{ContactsContract.RawContacts.ACCOUNT_NAME};
         Cursor cur = this.getContentResolver().query(ContactsContract.RawContacts.CONTENT_URI, projection, null, null, null);

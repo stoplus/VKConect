@@ -37,9 +37,6 @@ import com.vk.sdk.api.model.VKWallPostResult;
 import com.vk.sdk.api.photo.VKImageParameters;
 import com.vk.sdk.api.photo.VKUploadImage;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.Inet4Address;
@@ -47,8 +44,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private ImageView imageForSend;
@@ -59,15 +54,14 @@ public class MainActivity extends AppCompatActivity {
     public static String STATUS_KEY = "status";
     public static String STATUS_AND_PHOTO_KEY = "statusAndPhoto";
     public static String PHOTO_KEY = "photo";
-    private boolean foto = false;
-    private boolean status = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //если пользователь авторизован
+        //если пользователь не авторизован
         if (!AuthorizationUtils.isAuthorized(this)) {
             onLogout();
             return;
@@ -195,11 +189,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onComplete(VKResponse response) {
                 Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Фото опубликовано", Snackbar.LENGTH_LONG).show();
-            }
-
-            @Override
-            public void onError(VKError error) {
-                foto = false;
             }
         });
     }//makePost
