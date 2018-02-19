@@ -21,6 +21,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.vk.sdk.VKSdk;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -45,12 +47,6 @@ public class SImContacts extends AppCompatActivity implements SwipeRefreshLayout
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sim_contacts);
 
-        //Инициализация класса !!!-произойдет после компиляции-!!!
-        SImContactsPermissionsDispatcher.requestPermissionsWithPermissionCheck(this);
-    }//onCreate
-
-    @NeedsPermission({Manifest.permission.READ_CONTACTS})
-    void requestPermissions() {
         refreshLayout = findViewById(R.id.RefreshContacts);//получаем refreshLayout
         refreshLayout.setOnRefreshListener(this);//слушатель для обновления
 
@@ -58,6 +54,13 @@ public class SImContacts extends AppCompatActivity implements SwipeRefreshLayout
         setSupportActionBar(toolbar);
 
         recyclerView = findViewById(R.id.idRecyclerViewContact);
+
+        //Инициализация класса !!!-произойдет после компиляции-!!!
+        SImContactsPermissionsDispatcher.requestPermissionsWithPermissionCheck(this);
+    }//onCreate
+
+    @NeedsPermission({Manifest.permission.READ_CONTACTS})
+    void requestPermissions() {
         contactList = getSim();
         adapter = new AdapterContacts(this, contactList);
         recyclerView.setAdapter(adapter);
@@ -184,6 +187,11 @@ public class SImContacts extends AppCompatActivity implements SwipeRefreshLayout
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
+        MenuItem itemContacts = menu.findItem(R.id.mContacts); //определяем Item
+        itemContacts.setVisible(false);//делаем невидимым
+        MenuItem itemLogin = menu.findItem(R.id.mLogin); //определяем Item
+        itemLogin.setVisible(false);//делаем невидимым
+
         return true;
     }//onLogout
 

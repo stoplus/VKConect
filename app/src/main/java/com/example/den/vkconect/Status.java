@@ -56,6 +56,10 @@ public class Status extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
+        MenuItem item = menu.findItem(R.id.mStatus); //определяем Item
+        item.setVisible(false);//делаем невидимым
+        MenuItem itemLogin = menu.findItem(R.id.mLogin); //определяем Item
+        itemLogin.setVisible(false);//делаем невидимым
         return true;
     }//onLogout
 
@@ -80,8 +84,4 @@ public class Status extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-
-    public void fff(View view) throws SocketException {
-    }
-
 }

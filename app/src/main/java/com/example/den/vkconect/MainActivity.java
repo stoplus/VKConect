@@ -1,6 +1,7 @@
 package com.example.den.vkconect;
 
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -8,6 +9,7 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -24,6 +26,8 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.vk.sdk.VKAccessToken;
+import com.vk.sdk.VKCallback;
+import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKApi;
 import com.vk.sdk.api.VKApiConst;
 import com.vk.sdk.api.VKError;
@@ -44,6 +48,8 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+
+import static com.example.den.vkconect.LoginActivity.scope;
 
 public class MainActivity extends AppCompatActivity {
     private ImageView imageForSend;
@@ -87,30 +93,61 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int reqCode, int resultCode, Intent data) {
-        super.onActivityResult(reqCode, resultCode, data);
-
-        if (resultCode == RESULT_OK) {
-            try {
-                final Uri imageUri = data.getData();
-                final InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
-                //масштабируем под необходимый размер
-                int maxHeight = 400;
-                int maxWidth = 400;
-                float scale = Math.min(((float) maxHeight / bitmap.getWidth()), ((float) maxWidth / bitmap.getHeight()));
-                Matrix matrix = new Matrix();
-                matrix.postScale(scale, scale);
-                selectedImage = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-
-                imageForSend.setImageBitmap(selectedImage);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                Toast.makeText(this, "Something went wrong", Toast.LENGTH_LONG).show();
-            }
-        } else {
-            Toast.makeText(this, "You haven't picked Image", Toast.LENGTH_LONG).show();
+        switch (reqCode) {
+            case 10485://reqCode авторизации в ВК
+                loginVK(reqCode, resultCode, data);
+                break;
+            case 111://reqCode системы при выборе картинок
+                if (resultCode == RESULT_OK) {
+                    selectImage(data);
+                } else Toast.makeText(this, "You haven't picked Image", Toast.LENGTH_LONG).show();
+                break;
         }
+        super.onActivityResult(reqCode, resultCode, data);
     }//onActivityResult
+
+    private void loginVK(int reqCode, int resultCode, Intent data) {
+        if (!VKSdk.onActivityResult(reqCode, resultCode, data, new VKCallback<VKAccessToken>() {
+            // Пользователь успешно авторизовался
+            @Override
+            public void onResult(VKAccessToken res) {
+                account.access_token = res.accessToken;
+                account.user_id = Long.parseLong(res.userId);
+                account.save(MainActivity.this);//сохраняем access_token и user_id
+
+                AuthorizationUtils.setAuthorized(MainActivity.this);//устанавливаем флаг true в преференсах
+                Toast.makeText(MainActivity.this, "Авторизация прошла успешно.", Toast.LENGTH_LONG).show();
+            }//onResult
+
+            // Произошла ошибка авторизации (например, пользователь запретил авторизацию)
+            @Override
+            public void onError(VKError error) {
+                Toast.makeText(MainActivity.this, "Авторизация не пройдена!", Toast.LENGTH_LONG).show();
+            }//onError
+        })) {
+            return;
+        }//if
+    }//loginVK
+
+    private void selectImage(Intent data) {
+        try {
+            final Uri imageUri = data.getData();
+            final InputStream imageStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
+            //масштабируем под необходимый размер
+            int maxHeight = 400;
+            int maxWidth = 400;
+            float scale = Math.min(((float) maxHeight / bitmap.getWidth()), ((float) maxWidth / bitmap.getHeight()));
+            Matrix matrix = new Matrix();
+            matrix.postScale(scale, scale);
+            selectedImage = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+
+            imageForSend.setImageBitmap(selectedImage);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Something went wrong", Toast.LENGTH_LONG).show();
+        }//try-catch
+    }//selectImage
 
     //======================================================================================
     @SuppressLint("ShowToast")
@@ -150,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(VKError error) {
                 super.onError(error);
-                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Статус не опубликован!", Snackbar.LENGTH_LONG).show();
+                processingError(error, "Статус не опубликован!");
             }
         });
     }//sendStatus
@@ -168,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onError(VKError error) {
-                Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Фото не опубликовано!", Snackbar.LENGTH_LONG).show();
+                processingError(error, "Фото не опубликовано!");
             }
         });
     }
@@ -193,6 +230,27 @@ public class MainActivity extends AppCompatActivity {
         });
     }//makePost
 
+    private void processingError(VKError error, String mas){
+        String massage = error.errorMessage;
+        if (massage != null
+                && massage.equals("java.security.cert.CertPathValidatorException: Trust anchor for certification path not found.")) {
+            Snackbar.make(findViewById(R.id.idCoordinatorLayout), "Не найден путь сертификации!", Snackbar.LENGTH_LONG).show();
+        } else if (error.apiError.errorCode == 5) {
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Вы не авторизованы в ВК!")
+                    .setMessage("Для отправки данных в ВК вам надо авторизоваться.")
+                    .setPositiveButton("Авторизоваться", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            VKSdk.login(MainActivity.this, scope);
+                        }
+                    })
+                    .setNegativeButton("Не отправлять", (dialog, button) -> dialog.dismiss())
+                    .show();
+        } else
+            Snackbar.make(findViewById(R.id.idCoordinatorLayout), mas, Snackbar.LENGTH_LONG).show();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -208,12 +266,14 @@ public class MainActivity extends AppCompatActivity {
         login.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(login);
         finish();
-    }
+    }//onLogout
 
     //+======================================================================
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
+        MenuItem item = menu.findItem(R.id.mMain); //определяем Item
+        item.setVisible(false);//делаем невидимым
         return true;
     }//onLogout
 

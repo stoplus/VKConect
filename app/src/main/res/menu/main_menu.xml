@@ -12,9 +12,6 @@
         android:id="@+id/mStatus"
         android:title="@string/status"
         android:visibility="visible"/>
-    <item
-        android:id="@+id/mHistory"
-        android:title="@string/history" />
 
     <item
         android:id="@+id/mContacts"

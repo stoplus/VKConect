@@ -42,10 +42,9 @@ public class LoginActivity extends AppCompatActivity {
     private UserLoginTask mAuthTask = null;
     private TextView link;
     private CheckBox checkBox;
-    private String scope[] = new String[]{VKScope.WALL, VKScope.PHOTOS, VKScope.STATUS, VKScope.STATS};
+    public static String scope[] = new String[]{VKScope.WALL, VKScope.PHOTOS, VKScope.STATUS, VKScope.STATS};
     private TextInputLayout mEmailLayout;
     private TextInputLayout mPasswordLayout;
-    private Intent main;
     private Account account = new Account();
 
     @Override
@@ -53,7 +52,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        //Восстановление сохранённой сессии
+        //Восстановление сохранённой сессии, если не делали onLogout() (выход из сессии)
         account.restore(this);
 
         mEmailLayout = findViewById(R.id.email_layout);
@@ -105,27 +104,27 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
     }//onCreate
-
+//--------------------------------------------------------------------------------------------------------
+    //результат авторизации в ВК
     @Override
     protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
         if (!VKSdk.onActivityResult(requestCode, resultCode, data, new VKCallback<VKAccessToken>() {
+            // Пользователь успешно авторизовался
             @Override
             public void onResult(VKAccessToken res) {
                 account.access_token = res.accessToken;
                 account.user_id = Long.parseLong(res.userId);
-                account.save(LoginActivity.this);
+                account.save(LoginActivity.this);//сохраняем access_token и user_id
 
-                // Пользователь успешно авторизовался
-                AuthorizationUtils.setAuthorized(LoginActivity.this);
-                onLoginCompleted();
-            }
+                AuthorizationUtils.setAuthorized(LoginActivity.this);//устанавливаем флаг true в преференсах
+                onLoginCompleted();//запуск активности
+            }//onResult
 
-            @SuppressLint("ShowToast")
+            // Произошла ошибка авторизации (например, пользователь запретил авторизацию)
             @Override
             public void onError(VKError error) {
-                // Произошла ошибка авторизации (например, пользователь запретил авторизацию)
                 Snackbar.make(findViewById(R.id.idLinearLayout), "Введите данные или авторизуйтесь через VK.com!", Snackbar.LENGTH_LONG).show();
-            }
+            }//onError
         })) {
             super.onActivityResult(requestCode, resultCode, data);
         }
@@ -137,7 +136,7 @@ public class LoginActivity extends AppCompatActivity {
         startActivity(main);
         finish();
     }//onLoginCompleted
-
+//--------------------------------------------------------------------------------------------------------
     //	It checks the email field
     private boolean areFieldsValid() {
         boolean mail = mEmailLayout != null && mEmailLayout.getEditText() != null //проверяем поле имейл на нул
@@ -295,7 +294,7 @@ public class LoginActivity extends AppCompatActivity {
 
             try {
                 // Simulate network access.
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 return false;
             }
