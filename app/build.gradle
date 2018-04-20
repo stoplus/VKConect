@@ -31,15 +31,15 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
 
     // material design
-    compile 'com.android.support:design:26.1.0'
+    implementation 'com.android.support:design:26.1.0'
 
     // GSON with Retrofit
-    compile 'com.google.code.gson:gson:2.8.1'
-    compile 'com.squareup.retrofit2:retrofit:2.3.0'
-    compile 'com.squareup.retrofit2:converter-gson:2.3.0'
+    implementation 'com.google.code.gson:gson:2.8.1'
+    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
 
-    compile 'com.vk:androidsdk:1.6.9'
+    implementation 'com.vk:androidsdk:1.6.9'
 
-    compile 'com.github.hotchemi:permissionsdispatcher:3.1.0'
+    implementation 'com.github.hotchemi:permissionsdispatcher:3.1.0'
     annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:3.0.1'
 }
